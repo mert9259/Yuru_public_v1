@@ -9,7 +9,7 @@ const mysqlConnetion = require("../model/connection");
 
 Router.post("/signUp",(req,res)=>{
 	//Veri parselleme
-	const {name,email,password} = req.body;
+	const {name,email,password} = req.body.user;
 	//Veri veritabanına kayıt
     bcrypt.hash(password, 10, function(err, hash) {
         mysqlConnetion.query("INSERT INTO users (name,email,password) VALUES (?,?,?)",[name,email,hash],(err, rows, fields)=>{
