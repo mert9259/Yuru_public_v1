@@ -1,9 +1,9 @@
 const mysql = require("mysql");
 
 var mysqlConnetion = mysql.createConnection({
-	host:"yuru-database.chbyqaukfqjr.us-east-2.rds.amazonaws.com",
+	host:"*******",
 	user:"root",
-	password:"yuru2020",
+	password:"*******",
 	database:"yuru",
 	multipleStatements:true
 });
