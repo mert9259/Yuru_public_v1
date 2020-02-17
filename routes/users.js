@@ -2,44 +2,51 @@ const express = require("express");
 const Router = express.Router();
 const bcrypt = require("bcryptjs");
 const mysqlConnetion = require("../model/connection");
+const authenticationConnection = require("../controller/authentication");
 
 
-//User functions
-
-
-Router.post("/signUp",(req,res)=>{
+Router.post("/update",(req,res,next)=>{
 	//Veri parselleme
-	const {name,email,password} = req.body.user;
-	//Veri veritabanına kayıt
-    bcrypt.hash(password, 10, function(err, hash) {
-        mysqlConnetion.query("INSERT INTO users (name,email,password) VALUES (?,?,?)",[name,email,hash],(err, rows, fields)=>{
-			if(!err)
-				res.send(name+" kişisinin kayıt işlemi gerçekleştirilmiştir.");//Başarılı
-			else	
-				console.log(err);//Başarısız Hata
-		});
-    });//hash
-	
-});
+    const {name,email,password} = req.body.update_user;
+    const first_email = req.body.user.email;
+    
+    //Verinin veritabanına kayıt işlemi şifre girildiyse
+    if(password==""){
 
-Router.post("/signIn",(req,res)=>{
-	//Veri parselleme
-	const {email,password} = req.body.user;
-	//Veri veritabanına kayıt
-	mysqlConnetion.query("SELECT * FROM users WHERE email=?",email,(err, result, fields)=>{
-		if(!err){
-			console.log(email+" kişisinin kaydı bulundu.");//Başarılı
-			console.log(result[0].password);
-			bcrypt.compare(password, result[0].password, function(err, data) {
-				if(data)
-					res.send(result[0].name+" Hoşgeldin.");//Başarılı
-				else	
-					console.log("Parola yanlış");//Başarısız Hata
-			});//hash
-		}
-		else	
-			console.log(err);//Başarısız Hata
-	});
+        mysqlConnetion.query("UPDATE users SET name=?,email=? WHERE email=?",[name,email,first_email],(err, result)=>{
+            if(!err){
+                //Yeni token oluşturmak için yeni oturum değerlerini değiştir.
+                req.body.user.name = name;
+                req.body.user.email = email;
+                //Token oluşturulabilmesi için user'ın içindeki iat ve exp değerlerini sil.
+                delete req.body.user.iat;
+                delete req.body.user.exp;
+                //Yeni token oluştur.
+                authenticationConnection.sendToken(req,res,req.body.user.id);
+            }
+            else	
+                console.log(err);//Başarısız Hata
+        });
+    }
+    else{
+
+        bcrypt.hash(password, 10, function(err, hash) {
+            mysqlConnetion.query("UPDATE users SET name=?,email=?,password=? WHERE email=?",[name,email,hash,first_email],(err, result)=>{
+                if(!err){
+                    //Yeni token oluşturmak için yeni oturum değerlerini değiştir.
+                    req.body.user.name = name;
+                    req.body.user.email = email;
+                    //Token oluşturulabilmesi için user'ın içindeki iat ve exp değerlerini sil.
+                    delete req.body.user.iat;
+                    delete req.body.user.exp;
+                    //Yeni token oluştur.
+                    authenticationConnection.sendToken(req,res,req.body.user.id);
+                }
+                else	
+                    console.log(err);//Başarısız Hata
+            });
+        });
+    }
 	
 	
 });
